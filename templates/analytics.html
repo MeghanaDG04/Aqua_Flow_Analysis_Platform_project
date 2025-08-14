@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Analytics - Smart Drainage System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f9;
+            color: #333;
+        }
+
+        nav {
+            background: #0072ff;
+            padding: 15px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        h2 {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 20px;
+        }
+        .chart-box {
+            width: 45%;
+            background: white;
+            padding: 20px;
+            margin: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+        .note-box {
+            width: 90%;
+            background: #e6f2ff;
+            margin: 0 auto 30px auto;
+            padding: 20px;
+            border-left: 5px solid #0072ff;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 🌐 Universal Top Bar and Sidebar Menu -->
+<style>
+    /* Sidebar menu styling */
+    #sidebarMenu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 220px;
+        background-color: #004d40;
+        padding-top: 60px;
+        z-index: 999;
+        transition: transform 0.3s ease;
+        transform: translateX(-100%);
+    }
+
+    #sidebarMenu a {
+        display: block;
+        padding: 12px 20px;
+        color: white;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    #sidebarMenu a:hover {
+        background-color: #00695c;
+    }
+
+    /* Top bar styling */
+    .topbar {
+        background: #007b5e;
+        padding: 12px 20px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .topbar h2 {
+        flex-grow: 1;
+        text-align: center;
+        margin: 0;
+        font-size: 22px;
+    }
+
+    .hamburger {
+        font-size: 26px;
+        cursor: pointer;
+    }
+</style>
+
+<div class="topbar">
+    <div class="hamburger" onclick="toggleSidebar()">☰</div>
+    <h2>Smart Drainage Monitoring System</h2>
+</div>
+
+<!-- Sidebar Navigation -->
+<div id="sidebarMenu">
+    <a href="/dashboard">📊 Dashboard</a>
+    <a href="/history">📁 History</a>
+    <a href="/settings">⚙️ Settings</a>
+    <a href="/analytics">📈 Analytics</a>
+    <a href="/help-center">❓ Help Center</a>
+
+    <a href="/logout">🚪 Logout</a>
+</div>
+
+<script>
+    function toggleSidebar() {
+        const menu = document.getElementById("sidebarMenu");
+        if (menu.style.transform === "translateX(0%)") {
+            menu.style.transform = "translateX(-100%)";
+        } else {
+            menu.style.transform = "translateX(0%)";
+        }
+    }
+</script>
+
+
+<h2> Sensor Analytics Overview</h2>
+
+<div class="chart-container">
+    <div class="chart-box">
+        <h4>Blockage Frequency by Sensor</h4>
+        <canvas id="sensorFrequencyChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <h4>Blockages by Zone</h4>
+        <canvas id="zoneChart"></canvas>
+    </div>
+    <div class="chart-box">
+        <h4>Hourly Blockage Pattern</h4>
+        <canvas id="hourlyChart"></canvas>
+    </div>
+    <div class="chart-box">
+    <h4>📆 Monthly Blockage Trend</h4>
+    <canvas id="monthlyChart"></canvas>
+</div>
+</div>
+
+<!--div class="note-box">
+    <h4>Real-World Challenges & System Limitations</h4>
+    <ul>
+        <li><strong>🌧️ Heavy Rainfall:</strong> Can cause false blockage due to natural surge. Solution: Integrate rainfall forecast API to calibrate sensor thresholds dynamically.</li>
+        <li><strong>🌊 Continuous Flooding:</strong> Sensor fluctuation increases. Use water level + flow rate combination logic to verify actual blockage.</li>
+        <li><strong>🔧 Pipe Cracks:</strong> Detected via abnormal vibration + pressure drop. Future enhancement: Add acoustic or visual crack sensors.</li>
+        <li><strong>🧯 Sensor Failure:</strong> If no data, system flags inactive sensor. Add fallback/redundancy with adjacent sensor correlation.</li>
+        <li><strong>📡 Network Down:</strong> Data queued locally and pushed when connection resumes.</li>
+        <li><strong>⚠️ Manual Override:</strong> Add dashboard switch for manual override & diagnostics.</li>
+    </ul>
+</div-->
+
+<!--script>
+    const sensorFrequencyCtx = document.getElementById('sensorFrequencyChart');
+    new Chart(sensorFrequencyCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Water Level', 'Flow Rate', 'Pressure', 'Vibration', 'Gas', 'Proximity'],
+            datasets: [{
+                label: 'Blockage Triggers',
+                data: [12, 8, 5, 6, 4, 3],
+                backgroundColor: '#0072ff'
+            }]
+        }
+    });
+
+    const zoneChartCtx = document.getElementById('zoneChart');
+    new Chart(zoneChartCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Zone-1', 'Zone-2', 'Zone-3', 'Zone-4', 'Zone-5'],
+            datasets: [{
+                data: [10, 7, 3, 2, 5],
+                backgroundColor: ['#0072ff', '#00c6ff', '#4ac29a', '#ff9800', '#ff3d67']
+            }]
+        }
+    });
+
+    const hourlyChartCtx = document.getElementById('hourlyChart');
+    new Chart(hourlyChartCtx, {
+        type: 'line',
+        data: {
+            labels: ['12AM', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM'],
+            datasets: [{
+                label: 'Blockage Count',
+                data: [1, 0, 3, 6, 8, 5, 2, 4],
+                borderColor: '#0072ff',
+                backgroundColor: 'rgba(0,114,255,0.2)',
+                fill: true,
+                tension: 0.3
+            }]
+        }
+    });
+</script-->
+<script>
+window.onload = function() {
+    fetch("/analytics-data")
+        .then(res => res.json())
+        .then(data => {
+            // Sensor Chart
+            const sensorCtx = document.getElementById('sensorFrequencyChart');
+            new Chart(sensorCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data.sensor),
+                    datasets: [{
+                        label: 'Blockage Triggers',
+                        data: Object.values(data.sensor),
+                        backgroundColor: '#0072ff'
+                    }]
+                }
+            });
+
+            // Zone Chart
+            const zoneCtx = document.getElementById('zoneChart');
+            new Chart(zoneCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data.zone),
+                    datasets: [{
+                        data: Object.values(data.zone),
+                        backgroundColor: ['#0072ff', '#00c6ff', '#4ac29a', '#ff9800', '#ff3d67']
+                    }]
+                }
+            });
+
+            // Hourly Chart
+            const hours = ['00','01','02','03','04','05','06','07','08','09','10','11',
+                           '12','13','14','15','16','17','18','19','20','21','22','23'];
+            const counts = hours.map(h => data.hourly[h] || 0);
+
+            const hourCtx = document.getElementById('hourlyChart');
+            new Chart(hourCtx, {
+                type: 'line',
+                data: {
+                    labels: hours.map(h => `${h}:00`),
+                    datasets: [{
+                        label: 'Blockage Count',
+                        data: counts,
+                        borderColor: '#0072ff',
+                        backgroundColor: 'rgba(0,114,255,0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                }
+            });
+            // Monthly Chart
+const monthCtx = document.getElementById('monthlyChart');
+const monthLabels = Object.keys(data.monthly);
+const monthValues = Object.values(data.monthly);
+
+new Chart(monthCtx, {
+    type: 'bar',
+    data: {
+        labels: monthLabels,
+        datasets: [{
+            label: 'Blockages Detected',
+            data: monthValues,
+            backgroundColor: '#00c6ff'
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+        });
+};
+</script>
+
+
+</body>
+</html>

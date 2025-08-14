@@ -1,0 +1,816 @@
+<!--DOCTYPE html>
+<html>
+<head>
+    <title>Drainage Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.sensor-box {
+    background-color: #f9f9f9;
+    border: 2px solid #007b5e;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.triggered {
+    background-color: #fffbe6;
+    border-color: #ffc107;
+}
+
+.status-bar {
+    background-color: #e6f7ff;
+    border-left: 5px solid #007b5e;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+}
+
+        .tab-btn {
+            padding: 10px 20px;
+            background-color: #007b5e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+        .tab {
+            display: none;
+            text-align: center;
+        }
+        .tab.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #007b5e;
+            color: white;
+        }
+        h1,h2{text-align: center;
+
+        }
+        .live-box {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 600px;
+        }
+        .btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.control-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.control-btn:hover {
+    background-color: #e68900;
+}
+
+    </style>
+</head>
+<body>
+
+<h1>Drainage Monitoring Dashboard</h1>
+
+<div class="tabs">
+    <button class="tab-btn" onclick="showTab('live')">Live Dashboard</button>
+    <button class="tab-btn" onclick="showTab('history')">History</button>
+</div>
+<nav style="background: #0072ff; padding: 15px; color: white; display: flex; justify-content: space-between;">
+  <h3>🚰 Smart Drainage System</h3>
+  <div>
+    <a href="/dashboard" style="color: white; margin: 0 10px;">Dashboard</a>
+
+    <a href="/analytics" style="color: white; margin: 0 10px;">Analytics</a>
+    <a href="/settings" style="color: white; margin: 0 10px;">Settings</a>
+    <a href="/help_center" style="color: white; margin: 0 10px;">Help Center</a>
+    <a href="/about" style="color: white; margin: 0 10px;">About</a>
+    <a href="/logout" style="color: white; margin: 0 10px;">Logout</a>
+  </div>
+</nav>
+
+<div id="live" class="tab active">
+    <h2>Live Drainage Sensor Data</h2>
+    <div class="status-bar">
+        <h3>Status: <span id="status" class="status-text"></span></h3>
+        <h4>Location: <span id="location" class="status-text"></span></h4>
+    </div>
+
+    <div class="sensor-grid">
+        <div class="sensor-box"><strong>Water Level</strong><p id="water_level"></p></div>
+        <div class="sensor-box"><strong>Flow Rate</strong><p id="flow_rate"></p></div>
+        <div class="sensor-box"><strong>Pressure</strong><p id="pressure"></p></div>
+        <div class="sensor-box"><strong>Vibration</strong><p id="vibration"></p></div>
+        <div class="sensor-box"><strong>Gas Concentration</strong><p id="gas_concentration"></p></div>
+        <div class="sensor-box"><strong>Proximity</strong><p id="proximity"></p></div>
+        <div class="sensor-box triggered"><strong>Triggered Sensor</strong><p id="triggered_sensor"></p></div>
+    </div>
+</div>
+
+
+
+<div id="history" class="tab">
+
+
+
+    <h2>Blockage History</h2>
+    <button onclick="downloadCSV()">Download CSV</button>
+    <button onclick="clearHistory()">Clear</button>
+
+    <--nav>
+  <a href="/dashboard">Dashboard</a>
+  <a href="/settings">Settings</a>
+  <a href="/analytics">Analytics</a>
+  <a href="/help-center">Help Center</a>
+  <a href="/about">About</a>
+</nav>
+
+    <table id="historyTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Location</th>
+                <th>Timestamp</th>
+                <th>Status</th>
+                <th>Sensor</th>
+            </tr>
+        </thead>
+        <tbody id="historyBody">
+        </tbody>
+    </table>
+</div>
+<div class="btn-group">
+  <button class="control-btn" onclick="startGenerating()">Start</button>
+  <button class="control-btn" onclick="stopGenerating()">Stop</button>
+</div>
+
+
+
+
+<script>
+/*   let dataInterval;
+    let currentId = 1;
+
+    function showTab(id) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function startGenerating() {
+        if (!dataInterval) {
+            dataInterval = setInterval(() => {
+                const data = getRandomData();
+                updateLiveData(data);
+                updateHistory(data);
+            }, 1000);
+        }
+    }
+
+    function stopGenerating() {
+        clearInterval(dataInterval);
+        dataInterval = null;
+    }
+
+    function getRandomData() {
+        const randomFloat = (min, max) => (Math.random() * (max - min) + min).toFixed(2);
+        const sensors = ['Water Level', 'Flow Rate', 'Pressure', 'Vibration', 'Gas Concentration', 'Proximity'];
+
+        const isBlockage = Math.random() < 0.2;  // 20% chance
+        const status = isBlockage ? 'Blockage Detected' : 'Blockage Clear';
+        const triggeredSensor = isBlockage ? sensors[Math.floor(Math.random() * sensors.length)] : '---';
+
+        const data = {
+            location: "Zone-" + Math.ceil(Math.random() * 10),
+            water_level: randomFloat(0, 100),
+            flow_rate: randomFloat(0, 50),
+            pressure: randomFloat(0, 200),
+            vibration: randomFloat(0, 10),
+            gas_concentration: randomFloat(0, 100),
+            proximity: randomFloat(0, 20),
+            triggered_sensor: triggeredSensor,
+            status: status,
+            timestamp: new Date().toLocaleString()
+        };
+
+        if (status === 'Blockage Detected') {
+            alert("🚨 ALERT: Blockage Detected at a Drainage Point!");
+        }
+
+        return data;
+    }
+
+    function updateLiveData(data) {
+        document.getElementById('status').textContent = data.status;
+        document.getElementById('location').textContent = data.location;
+        document.getElementById('water_level').textContent = data.water_level;
+        document.getElementById('flow_rate').textContent = data.flow_rate;
+        document.getElementById('pressure').textContent = data.pressure;
+        document.getElementById('vibration').textContent = data.vibration;
+        document.getElementById('gas_concentration').textContent = data.gas_concentration;
+        document.getElementById('proximity').textContent = data.proximity;
+        document.getElementById('triggered_sensor').textContent = data.triggered_sensor;
+    }
+
+    function updateHistory(data) {
+        const table = document.getElementById('historyBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${currentId++}</td>
+            <td>${data.location}</td>
+            <td>${data.timestamp}</td>
+            <td>${data.status}</td>
+            <td>${data.triggered_sensor}</td>
+        `;
+        table.prepend(row);
+    }
+
+    function downloadCSV() {
+        const table = document.getElementById('historyTable');
+        let csv = [];
+        for (let row of table.rows) {
+            let cols = Array.from(row.cells).map(cell => `"${cell.innerText}"`);
+            csv.push(cols.join(","));
+        }
+
+        const blob = new Blob([csv.join("\n")], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "blockage_history.csv";
+        a.click();
+    }
+
+    function clearHistory() {
+        document.getElementById("historyBody").innerHTML = "";
+        currentId = 1;
+    }
+
+    // Load live tab by default
+    window.onload = () => showTab('live');*/
+
+    let dataInterval;
+    let currentId = 1;
+
+    function showTab(id) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // ✅ FETCH DATA FROM BACKEND
+    /*function getRandomData() {
+        return fetch('/live_data')
+            .then(res => res.json())
+            .then(data => {
+                return {
+                    location: data.sensor_data.location,
+                    water_level: data.sensor_data.water_level,
+                    flow_rate: data.sensor_data.flow_rate,
+                    pressure: data.sensor_data.pressure,
+                    vibration: data.sensor_data.vibration,
+                    gas_concentration: data.sensor_data.gas_concentration,
+                    proximity: data.sensor_data.proximity,
+                    triggered_sensor: data.sensor_data.triggered_sensor,
+                    status: data.status,
+                    timestamp: data.timestamp
+                };
+            });
+    }*/
+    function getRandomData() {
+    const randomFloat = (min, max) => (Math.random() * (max - min) + min).toFixed(2);
+    const sensors = ['Water Level', 'Flow Rate', 'Pressure', 'Vibration', 'Gas Concentration', 'Proximity'];
+
+    // Simulate 20% chance of blockage
+    const isBlockage = Math.random() < 0.2;
+    const status = isBlockage ? 'Blockage Detected' : 'Blockage Clear';
+    const triggeredSensor = isBlockage ? sensors[Math.floor(Math.random() * sensors.length)] : '---';
+
+    return {
+        location: "Zone-" + Math.ceil(Math.random() * 10),
+        water_level: randomFloat(0, 100),
+        flow_rate: randomFloat(0, 50),
+        pressure: randomFloat(0, 200),
+        vibration: randomFloat(0, 10),
+        gas_concentration: randomFloat(0, 100),
+        proximity: randomFloat(0, 20),
+        triggered_sensor: triggeredSensor,
+        status: status,
+        timestamp: new Date().toLocaleString()
+    };
+}
+
+
+    function startGenerating() {
+    if (!dataInterval) {
+        dataInterval = setInterval(() => {
+            getRandomData().then(data => {
+                updateLiveData(data);
+                updateHistory(data);
+            });
+        }, 5000);  // Every 5 seconds
+    }
+}
+
+
+    function stopGenerating() {
+        clearInterval(dataInterval);
+        dataInterval = null;
+    }
+
+    function updateLiveData(data) {
+        document.getElementById('status').textContent = data.status;
+        document.getElementById('location').textContent = data.location;
+        document.getElementById('water_level').textContent = data.water_level;
+        document.getElementById('flow_rate').textContent = data.flow_rate;
+        document.getElementById('pressure').textContent = data.pressure;
+        document.getElementById('vibration').textContent = data.vibration;
+        document.getElementById('gas_concentration').textContent = data.gas_concentration;
+        document.getElementById('proximity').textContent = data.proximity;
+        document.getElementById('triggered_sensor').textContent = data.triggered_sensor;
+    }
+
+    function updateHistory(data) {
+        const table = document.getElementById('historyBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${currentId++}</td>
+            <td>${data.location}</td>
+            <td>${data.timestamp}</td>
+            <td>${data.status}</td>
+            <td>${data.triggered_sensor}</td>
+        `;
+        table.prepend(row);
+    }
+
+    function downloadCSV() {
+        const table = document.getElementById('historyTable');
+        let csv = [];
+        for (let row of table.rows) {
+            let cols = Array.from(row.cells).map(cell => `"${cell.innerText}"`);
+            csv.push(cols.join(","));
+        }
+
+        const blob = new Blob([csv.join("\n")], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "blockage_history.csv";
+        a.click();
+    }
+
+    function clearHistory() {
+        document.getElementById("historyBody").innerHTML = "";
+        currentId = 1;
+    }
+
+    window.onload = () => showTab('live');
+
+
+</script>
+
+</body>
+</html-->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Drainage Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #e6f9ff, #e0f7fa);
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background-color: #0072ff;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 12px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        h1, h2 {
+            text-align: center;
+
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background-color: #007b5e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin: 0 10px;
+            border-radius: 5px;
+        }
+
+        .tab {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab.active {
+            display: block;
+        }
+
+        .status-bar {
+            background: #e6f7ff;
+            border-left: 5px solid #007b5e;
+            padding: 15px;
+            margin: 15px auto;
+            border-radius: 6px;
+            width: 60%;
+        }
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .sensor-box {
+            background: white;
+            border: 2px solid #007b5e;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .triggered {
+            background-color: #fffbe6;
+            border-color: #ffc107;
+        }
+
+        table {
+            width: 90%;
+            margin: auto;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007b5e;
+            color: white;
+        }
+
+        .btn-group {
+            text-align: center;
+            margin: 20px;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+
+        .control-btn:hover {
+            background-color: #e68900;
+        }
+
+    </style>
+</head>
+<body>
+<!-- Top Navbar -->
+<div style="background: #007b5e; padding: 12px; color: white; display: flex; align-items: center; justify-content: space-between;">
+    <div onclick="toggleMenu()" style="cursor: pointer; font-size: 24px;">&#9776;</div>
+    <h2 style="margin: 0 auto;">Smart Drainage Monitoring System</h2>
+</div>
+
+<!-- Sidebar Menu -->
+<div id="sidebarMenu" style="display: none; position: fixed; top: 0; left: 0; height: 100%; width: 220px; background-color: #004d40; padding-top: 60px; z-index: 999;">
+    <a href="/dashboard" style="display: block; padding: 12px 20px; color: white; text-decoration: none;">📊 Dashboard</a>
+    <a href="/history" style="display: block; padding: 12px 20px; color: white; text-decoration: none;">📁 History</a>
+    <a href="/settings" style="display: block; padding: 12px 20px; color: white; text-decoration: none;">⚙️ Settings</a>
+    <a href="/analytics" style="display: block; padding: 12px 20px; color: white; text-decoration: none;">📈 Analytics</a>
+    <a href="/help-center" style="display: block; padding: 12px 20px; color: white; text-decoration: none;">❓ Help Center</a>
+
+    <a href="/logout" style="display: block; padding: 12px 20px; color: white; text-decoration: none;">🚪 Logout</a>
+</div>
+<!--nav>
+    <h3> Smart Drainage System</h3>
+    <div>
+        <a href="/dashboard">Dashboard</a>
+        <button class="tab-btn" onclick="showTab('live')">Live Dashboard</button>
+        <button class="tab-btn" onclick="showTab('history')">History</button>
+        <a href="/analytics">Analytics</a>
+        <a href="/settings">Settings</a>
+        <a href="/help-center">Help Center</a>
+        <a href="/about">About</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav-->
+
+<!--div class="tabs">
+    <button class="tab-btn" onclick="showTab('live')">Live Dashboard</button>
+
+</div-->
+
+<!-- LIVE DASHBOARD -->
+<div id="live" class="tab active">
+    <h2>Live Drainage Sensor Data</h2>
+    <div class="status-bar">
+        <h3>Status: <span id="status"></span></h3>
+        <h4>Location: <span id="location"></span></h4>
+    </div>
+
+    <div class="sensor-grid">
+        <div class="sensor-box"><strong>Water Level</strong><p id="water_level"></p></div>
+        <div class="sensor-box"><strong>Flow Rate</strong><p id="flow_rate"></p></div>
+        <div class="sensor-box"><strong>Pressure</strong><p id="pressure"></p></div>
+        <div class="sensor-box"><strong>Vibration</strong><p id="vibration"></p></div>
+        <div class="sensor-box"><strong>Gas Concentration</strong><p id="gas_concentration"></p></div>
+        <div class="sensor-box"><strong>Proximity</strong><p id="proximity"></p></div>
+        <div class="sensor-box triggered"><strong>Triggered Sensor</strong><p id="triggered_sensor"></p></div>
+    </div>
+</div>
+
+<!-- HISTORY TABLE -->
+<div id="history" class="tab">
+    <h2>Blockage History</h2>
+    <div class="btn-group">
+        <button class="control-btn" onclick="downloadCSV()">Download CSV</button>
+        <button class="control-btn" onclick="clearHistory()">Clear</button>
+    </div>
+    <table id="historyTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Location</th>
+                <th>Timestamp</th>
+                <th>Status</th>
+                <th>Sensor</th>
+            </tr>
+        </thead>
+        <tbody id="historyBody">
+        </tbody>
+    </table>
+</div>
+
+<!-- CONTROL BUTTONS -->
+<div class="btn-group">
+    <button class="control-btn" onclick="startGenerating()">Start Monitoring</button>
+    <button class="control-btn" onclick="stopGenerating()">Stop Monitoring</button>
+</div>
+
+<!--script>
+    let dataInterval;
+    let currentId = 1;
+
+    function showTab(id) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function getRandomData() {
+        return fetch('/live_data')
+            .then(res => res.json())
+            .then(data => {
+                return {
+                    location: data.sensor_data.location,
+                    water_level: data.sensor_data.water_level,
+                    flow_rate: data.sensor_data.flow_rate,
+                    pressure: data.sensor_data.pressure,
+                    vibration: data.sensor_data.vibration,
+                    gas_concentration: data.sensor_data.gas_concentration,
+                    proximity: data.sensor_data.proximity,
+                    triggered_sensor: data.sensor_data.triggered_sensor,
+                    status: data.status,
+                    timestamp: data.timestamp
+                };
+            });
+    }
+
+    function startGenerating() {
+        if (!dataInterval) {
+            dataInterval = setInterval(() => {
+                getRandomData().then(data => {
+                    updateLiveData(data);
+                    updateHistory(data);
+                });
+            }, 5000);
+        }
+    }
+
+    function stopGenerating() {
+        clearInterval(dataInterval);
+        dataInterval = null;
+    }
+
+    /*function updateLiveData(data) {
+        document.getElementById('status').textContent = data.status;
+        document.getElementById('location').textContent = data.location;
+        document.getElementById('water_level').textContent = data.water_level;
+        document.getElementById('flow_rate').textContent = data.flow_rate;
+        document.getElementById('pressure').textContent = data.pressure;
+        document.getElementById('vibration').textContent = data.vibration;
+        document.getElementById('gas_concentration').textContent = data.gas_concentration;
+        document.getElementById('proximity').textContent = data.proximity;
+        document.getElementById('triggered_sensor').textContent = data.triggered_sensor;*/
+        function updateLiveData(data) {
+    const d = data.sensor_data;
+    document.getElementById('status').textContent = data.status;
+    document.getElementById('location').textContent = d.location;
+    document.getElementById('water_level').textContent = d.water_level;
+    document.getElementById('flow_rate').textContent = d.flow_rate;
+    document.getElementById('pressure').textContent = d.pressure;
+    document.getElementById('vibration').textContent = d.vibration;
+    document.getElementById('gas_concentration').textContent = d.gas_concentration;
+    document.getElementById('proximity').textContent = d.proximity;
+    document.getElementById('triggered_sensor').textContent = d.triggered_sensor;
+}
+
+
+        // Highlight on blockage
+        if (data.status === 'Blockage Detected') {
+            document.getElementById('status').style.color = 'red';
+        } else {
+            document.getElementById('status').style.color = 'green';
+        }
+    }
+
+    function updateHistory(data) {
+        const table = document.getElementById('historyBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${currentId++}</td>
+            <td>${data.location}</td>
+            <td>${data.timestamp}</td>
+            <td>${data.status}</td>
+            <td>${data.triggered_sensor}</td>
+        `;
+        table.prepend(row);
+    }
+
+    function downloadCSV() {
+        const table = document.getElementById('historyTable');
+        let csv = [];
+        for (let row of table.rows) {
+            let cols = Array.from(row.cells).map(cell => `"${cell.innerText}"`);
+            csv.push(cols.join(","));
+        }
+        const blob = new Blob([csv.join("\n")], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "blockage_history.csv";
+        a.click();
+    }
+
+    function clearHistory() {
+        document.getElementById("historyBody").innerHTML = "";
+        currentId = 1;
+    }
+
+    // Load tab
+    window.onload = () => showTab('live');
+</script-->
+<script>
+    function toggleMenu() {
+        const sidebar = document.getElementById("sidebarMenu");
+        sidebar.style.display = sidebar.style.display === "block" ? "none" : "block";
+    }
+let dataInterval;
+let currentId = 1;
+
+function showTab(id) {
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function startGenerating() {
+    if (!dataInterval) {
+        dataInterval = setInterval(() => {
+            fetch('/live_data')
+                .then(res => res.json())
+                .then(data => {
+                    updateLiveData(data);
+                    updateHistory(data);
+                })
+                .catch(err => console.error('Error:', err));
+        }, 5000); // 5 seconds
+    }
+}
+
+function stopGenerating() {
+    clearInterval(dataInterval);
+    dataInterval = null;
+}
+
+function updateLiveData(data) {
+    const d = data.sensor_data;
+    document.getElementById('status').textContent = data.status;
+    document.getElementById('location').textContent = d.location;
+    document.getElementById('water_level').textContent = d.water_level;
+    document.getElementById('flow_rate').textContent = d.flow_rate;
+    document.getElementById('pressure').textContent = d.pressure;
+    document.getElementById('vibration').textContent = d.vibration;
+    document.getElementById('gas_concentration').textContent = d.gas_concentration;
+    document.getElementById('proximity').textContent = d.proximity;
+    document.getElementById('triggered_sensor').textContent = d.triggered_sensor;
+}
+
+function updateHistory(data) {
+    const table = document.getElementById('historyBody');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${currentId++}</td>
+        <td>${data.sensor_data.location}</td>
+        <td>${data.timestamp}</td>
+        <td>${data.status}</td>
+        <td>${data.sensor_data.triggered_sensor}</td>
+    `;
+    table.prepend(row);
+}
+
+function downloadCSV() {
+    const table = document.getElementById('historyTable');
+    let csv = [];
+    for (let row of table.rows) {
+        let cols = Array.from(row.cells).map(cell => `"${cell.innerText}"`);
+        csv.push(cols.join(","));
+    }
+
+    const blob = new Blob([csv.join("\n")], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "blockage_history.csv";
+    a.click();
+}
+
+function clearHistory() {
+    document.getElementById("historyBody").innerHTML = "";
+    currentId = 1;
+}
+
+window.onload = () => showTab('live');
+</script>
+
+
+</body>
+</html>
+
+
